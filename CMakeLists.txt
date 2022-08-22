@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(colorbox VERSION 0.0.1 LANGUAGES C)
+project(colorbox VERSION 0.0.1 LANGUAGES C CXX)
 
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON CACHE BOOL "Prevents cmake -S. -B.")
 set(CMAKE_DISABLE_SOURCE_CHANGES ON CACHE BOOL "Prevent writing files to CMAKE_SOURCE_DIR under configure")
@@ -40,20 +40,34 @@ set(GLFW_VULKAN_STATIC OFF)
 
 # Add GLFW
 add_subdirectory(${PROJECT_SOURCE_DIR}/dep/glfw EXCLUDE_FROM_ALL)
+add_subdirectory(${PROJECT_SOURCE_DIR}/dep/cimgui EXCLUDE_FROM_ALL)
 
 # Get all of our source files into a list
 file(GLOB sources CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/*.c)
 add_executable(${PROJECT_NAME})
 
+file(GLOB gl3w_sources CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/dep/gl3w/GL/*.c)
+
+set(IMGUI_SOURCES 
+  "${PROJECT_SOURCE_DIR}/dep/cimgui/imgui/imgui.cpp"
+  "${PROJECT_SOURCE_DIR}/dep/cimgui/imgui/imgui_draw.cpp"
+  "${PROJECT_SOURCE_DIR}/dep/cimgui/imgui/imgui_demo.cpp"
+  "${PROJECT_SOURCE_DIR}/dep/cimgui/imgui/imgui_tables.cpp"
+  "${PROJECT_SOURCE_DIR}/dep/cimgui/imgui/imgui_widgets.cpp"
+  "${PROJECT_SOURCE_DIR}/dep/cimgui/imgui_impl_glfw.cpp"
+  "${PROJECT_SOURCE_DIR}/dep/cimgui/imgui_impl_opengl3.cpp")
+
 # Add our source files & nanovg
-target_sources(${PROJECT_NAME} PRIVATE ${sources})
+target_sources(${PROJECT_NAME} PRIVATE ${sources} ${gl3w_sources})
 
 # Include headers
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/dep/glad/include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/dep/gl3w>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/dep>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cimgui>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cimgui/imgui>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INCLUDE_INSTALLDIR}>)
@@ -70,6 +84,15 @@ target_compile_definitions(${PROJECT_NAME}
 
 # Set the C Standard to C99
 target_compile_features(${PROJECT_NAME} PRIVATE c_std_99)
+
+add_library(cimgui_glfw SHARED ${IMGUI_SOURCES})
+add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GL3W)
+target_compile_definitions(cimgui_glfw PRIVATE
+	IMGUI_IMPL_API=extern\ \"C\"
+	IMGUI_IMPL_OPENGL_LOADER_GL3W)
+target_include_directories(cimgui_glfw PRIVATE
+  "${PROJECT_SOURCE_DIR}/dep/cimgui/imgui"
+  "${PROJECT_SOURCE_DIR}/dep/cimgui")
 
 # Add warning output for the different compilers
 target_compile_options(${PROJECT_NAME}
@@ -96,7 +119,8 @@ target_link_libraries(${PROJECT_NAME}
     OpenGL::GL
     $<$<NOT:$<PLATFORM_ID:Windows>>:m>
     glfw
-    $<$<PLATFORM_ID:Windows>:XInput>)
+    cimgui
+    cimgui_glfw)
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_VISIBILITY_PRESET "hidden")
 

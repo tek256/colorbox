@@ -23,11 +23,16 @@ Here are the target platforms for this library:
 
 _NOTE: I'm always open to adding more target platforms!_
 
+### Building
+Building this application yourself requires [CMake](https://cmake.org/) to be installed. After CMake is installed you should be able to build using:
+```
+cmake -Bbuild -S.
+cmake --build build
+```
+For more information of building/dependencies that might crop up, check out the [Build Guide](https://github.com/tek256/colorbox/wiki/Build-Guide).
 
 ### Todo
 ```
-- Add in resizing support
-- Add in UI for picking color dynamically
 - Cleanup warnings
 - Create release binaries
 - Automate build/release candidate generation with GitHub Workflows
